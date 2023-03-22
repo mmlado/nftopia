@@ -12,3 +12,9 @@ def __init__():
 def isOwner() -> bool:
     assert msg.sender != ZERO_ADDRESS
     return self.owner == msg.sender
+
+
+@external
+@payable
+def mint(_url: String[200]) -> bool:
+    return True

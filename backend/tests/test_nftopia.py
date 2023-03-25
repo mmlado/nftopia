@@ -31,10 +31,11 @@ def test_mint(nftopia_contract, accounts):
     transaction = nftopia_contract.mint(URI)
 
     assert(len(transaction.events) == 1)
-    assert(transaction.events[0]['_from'] == ZERO_ADDRESS)
-    assert(transaction.events[0]['_to'] == accounts[0])
-    assert(transaction.events[0]['_tokenId'] == 0)
+    event = transaction.events['Transfer']
+    assert(event['_from'] == ZERO_ADDRESS)
+    assert(event['_to'] == accounts[0])
+    assert(event['_tokenId'] == 0)
 
-    assert(nftopia_contract.tokenURI(0)) == URI
+    assert(nftopia_contract.tokenURI(0) == URI)
     assert(nftopia_contract.balanceOf(accounts[0]) == 1)
     assert(nftopia_contract.ownerOf(0) == accounts[0])

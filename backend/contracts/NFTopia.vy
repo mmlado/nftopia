@@ -22,6 +22,7 @@ event ApprovalForAll:
 ERC721_INTERFACE_ID: constant(bytes4) = 0x80ac58cd
 
 owner_of_nft: HashMap[uint256, address]
+id_to_url: HashMap[uint256, String[50]]
 token_count: HashMap[address, uint256]
 number_of_tokens: uint256
 
@@ -39,7 +40,7 @@ def supportsInterface(interface_id: bytes4) -> bool:
 @view
 @external
 def balanceOf(_owner: address) -> uint256:
-    assert _owner != ZERO_ADDRESS
+    assert _owner != ZERO_ADDRESS, "Zero address"
     
     return self.token_count[_owner]
 
@@ -48,9 +49,16 @@ def balanceOf(_owner: address) -> uint256:
 def ownerOf(_tokenId: uint256) -> address:
     owner: address = self.owner_of_nft[_tokenId]
     
-    assert owner != ZERO_ADDRESS
+    assert owner != ZERO_ADDRESS, "No owner"
     
     return owner
+
+@view
+@external
+def tokenURI(_tokenId: uint256) -> String[50]:
+    assert self.owner_of_nft[_tokenId] != ZERO_ADDRESS, "No owner"
+
+    return self.id_to_url[_tokenId]
 
 @view
 @external
@@ -82,8 +90,15 @@ def setApprovalForAll(_operator: address, _approved: bool):
     pass
 
 @external
-def mint(_url: String[200]) -> bool:
-    self.owner_of_nft[self.number_of_tokens] = msg.sender
-    self.token_count[msg.sender] += 1
+def mint(_url: String[50]) -> bool:
+    to: address = msg.sender
+    token_id: uint256 = self.number_of_tokens
+    
+    self.owner_of_nft[token_id] = to
+    self.id_to_url[token_id] = _url
+    self.token_count[to] += 1
     self.number_of_tokens += 1
+    
+    log Transfer(ZERO_ADDRESS, to, token_id)
+
     return True

@@ -24,18 +24,29 @@ def test_token_uri(nftopia_contract, accounts):
     with brownie.reverts("No owner"):
         nftopia_contract.tokenURI(0)
 
+def test_transfer_from(nftopia_contract, accounts):
+    alice = accounts[0]
+    bob = accounts[1]
+    nftopia_contract.mint(URI, {'from': alice})
+
+    transaction = nftopia_contract.transferFrom(alice, bob, 0)
+    
+    _test_transfer(transaction, alice, bob, 0)
 
 def test_mint(nftopia_contract, accounts):
     assert(nftopia_contract.balanceOf(accounts[0]) == 0)
 
     transaction = nftopia_contract.mint(URI)
 
-    assert(len(transaction.events) == 1)
-    event = transaction.events['Transfer']
-    assert(event['_from'] == ZERO_ADDRESS)
-    assert(event['_to'] == accounts[0])
-    assert(event['_tokenId'] == 0)
+    _test_transfer(transaction, ZERO_ADDRESS, accounts[0], 0)
 
     assert(nftopia_contract.tokenURI(0) == URI)
     assert(nftopia_contract.balanceOf(accounts[0]) == 1)
     assert(nftopia_contract.ownerOf(0) == accounts[0])
+
+def _test_transfer(transaction, from_address, to_address, token_id):
+    assert(len(transaction.events) == 1)
+    event = transaction.events['Transfer']
+    assert(event['_from'] == from_address)
+    assert(event['_to'] == to_address)
+    assert(event['_tokenId'] == token_id)

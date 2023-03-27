@@ -4,6 +4,15 @@ from vyper.interfaces import ERC721
 
 implements: ERC721
 
+# Interface for the contract called by safeTransferFrom()
+interface ERC721Receiver:
+    def onERC721Received(
+        _operator: address,
+        _from: address,
+        _tokenId: uint256,
+        _data: Bytes[1024]
+    ) -> bytes4: view
+
 event Transfer:
     _from: address
     _to: address
@@ -73,12 +82,16 @@ def isApprovedForAll(_owner: address, _operator: address) -> bool:
 @external
 @payable
 def transferFrom(_from: address, _to: address, _tokenId: uint256):
-    pass
+    self._transfer(_from, _to, _tokenId, msg.sender)
 
 @external
 @payable
 def safeTransferFrom(_from: address, _to: address, _tokenId: uint256, _data: Bytes[1024]):
-    pass
+    self._transfer(_from, _to, _tokenId, msg.sender)
+    
+    if _to.is_contract:
+        return_value: bytes4 = ERC721Receiver(_to).onERC721Received(msg.sender, _from, _tokenId, _data)
+        assert return_value == method_id("onERC721Received(address,address,uint256,bytes)", output_type=bytes4)
 
 @external
 @payable
@@ -102,3 +115,14 @@ def mint(_url: String[50]) -> bool:
     log Transfer(ZERO_ADDRESS, to, token_id)
 
     return True
+
+@internal
+def _transfer(_from: address, _to: address, _token_id: uint256, _sender: address):
+    assert _from == _sender
+    assert self.owner_of_nft[_token_id] == _sender
+
+    self.owner_of_nft[_token_id] = _to
+    self.token_count[_from] -= 1
+    self.token_count[_to] += 1
+
+    log Transfer(_from, _to, _token_id)

@@ -118,8 +118,8 @@ def mint(_url: String[50]) -> bool:
 
 @internal
 def _transfer(_from: address, _to: address, _token_id: uint256, _sender: address):
-    assert _from == _sender
-    assert self.owner_of_nft[_token_id] == _sender
+    assert _from == _sender, "From address not the sender"
+    assert self.owner_of_nft[_token_id] == _sender, "Not owner" 
 
     self.owner_of_nft[_token_id] = _to
     self.token_count[_from] -= 1

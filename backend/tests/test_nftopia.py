@@ -29,9 +29,23 @@ def test_transfer_from(nftopia_contract, accounts):
     bob = accounts[1]
     nftopia_contract.mint(URI, {'from': alice})
 
+    alice_balance = nftopia_contract.balanceOf(alice)
+    bob_balance = nftopia_contract.balanceOf(bob)
     transaction = nftopia_contract.transferFrom(alice, bob, 0)
     
+    assert(nftopia_contract.balanceOf(alice) == alice_balance - 1)
+    assert(nftopia_contract.balanceOf(bob) == bob_balance + 1)
+    assert(nftopia_contract.ownerOf(0) == bob)
+    
     _test_transfer(transaction, alice, bob, 0)
+
+def test_transfer_from_not_owner(nftopia_contract, accounts):
+    alice = accounts[0]
+    bob = accounts[1]
+    nftopia_contract.mint(URI, {'from': alice})
+
+    with brownie.reverts("Not owner"):
+        nftopia_contract.transferFrom(bob, alice, 0, {'from': bob})
 
 def test_mint(nftopia_contract, accounts):
     assert(nftopia_contract.balanceOf(accounts[0]) == 0)

@@ -49,7 +49,7 @@ def supportsInterface(interface_id: bytes4) -> bool:
 @view
 @external
 def balanceOf(_owner: address) -> uint256:
-    assert _owner != ZERO_ADDRESS, "Zero address"
+    assert _owner != empty(address), "Zero address"
     
     return self.token_count[_owner]
 
@@ -58,21 +58,21 @@ def balanceOf(_owner: address) -> uint256:
 def ownerOf(_tokenId: uint256) -> address:
     owner: address = self.owner_of_nft[_tokenId]
     
-    assert owner != ZERO_ADDRESS, "No owner"
+    assert owner != empty(address), "No owner"
     
     return owner
 
 @view
 @external
 def tokenURI(_tokenId: uint256) -> String[50]:
-    assert self.owner_of_nft[_tokenId] != ZERO_ADDRESS, "No owner"
+    assert self.owner_of_nft[_tokenId] != empty(address), "No owner"
 
     return self.id_to_url[_tokenId]
 
 @view
 @external
 def getApproved(_tokenId: uint256) -> address:
-    return ZERO_ADDRESS
+    return empty(address)
 
 @view
 @external
@@ -103,7 +103,7 @@ def setApprovalForAll(_operator: address, _approved: bool):
     pass
 
 @external
-def mint(_url: String[50]) -> bool:
+def mint(_url: String[50]):
     to: address = msg.sender
     token_id: uint256 = self.number_of_tokens
     
@@ -112,9 +112,17 @@ def mint(_url: String[50]) -> bool:
     self.token_count[to] += 1
     self.number_of_tokens += 1
     
-    log Transfer(ZERO_ADDRESS, to, token_id)
+    log Transfer(empty(address), to, token_id)
 
-    return True
+@external
+def burn(_token_id: uint256):
+    sender: address = msg.sender
+    assert self.owner_of_nft[_token_id] == sender, "Not owner"
+
+    self.owner_of_nft[_token_id] = empty(address)
+    self.token_count[sender] = unsafe_sub(self.token_count[sender], 1)
+
+    log Transfer(sender, empty(address), _token_id)
 
 @internal
 def _transfer(_from: address, _to: address, _token_id: uint256, _sender: address):
@@ -122,7 +130,7 @@ def _transfer(_from: address, _to: address, _token_id: uint256, _sender: address
     assert self.owner_of_nft[_token_id] == _sender, "Not owner" 
 
     self.owner_of_nft[_token_id] = _to
-    self.token_count[_from] -= 1
-    self.token_count[_to] += 1
+    self.token_count[_from] = unsafe_sub(self.token_count[_from], 1)
+    self.token_count[_to] = unsafe_add(self.token_count[_to], 1)
 
     log Transfer(_from, _to, _token_id)

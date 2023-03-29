@@ -83,3 +83,21 @@ def _test_transfer(transaction, from_address, to_address, token_id):
     assert(event['_from'] == from_address)
     assert(event['_to'] == to_address)
     assert(event['_tokenId'] == token_id)
+
+def test_burn(nftopia_contract, accounts):
+    nftopia_contract.mint(URI)
+
+    transaction = nftopia_contract.burn(0)
+    
+    _test_transfer(transaction, accounts[0], ZERO_ADDRESS, 0)
+
+    assert(nftopia_contract.balanceOf(accounts[0]) == 0)
+
+    with brownie.reverts("No owner"):
+        nftopia_contract.tokenURI(0)
+
+def test_burn_not_owner(nftopia_contract, accounts):
+    nftopia_contract.mint(URI, {'from': accounts[0]})
+
+    with brownie.reverts("Not owner"):
+        nftopia_contract.burn(0, {'from': accounts[1]})

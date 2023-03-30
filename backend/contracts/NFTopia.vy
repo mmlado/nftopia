@@ -28,12 +28,14 @@ event ApprovalForAll:
     _operator: address
     _approved: bool
 
+ERC165_INTERFACE_ID: constant(bytes4) = 0x01ffc9a7
 ERC721_INTERFACE_ID: constant(bytes4) = 0x80ac58cd
 
 owner_of_nft: HashMap[uint256, address]
 id_to_url: HashMap[uint256, String[50]]
 token_count: HashMap[address, uint256]
 number_of_tokens: uint256
+approvals: HashMap[uint256, address]
 
 @external
 def __init__():
@@ -43,6 +45,7 @@ def __init__():
 @external
 def supportsInterface(interface_id: bytes4) -> bool:
     return interface_id in [
+        ERC165_INTERFACE_ID,
         ERC721_INTERFACE_ID
     ]
 
@@ -72,7 +75,9 @@ def tokenURI(_tokenId: uint256) -> String[50]:
 @view
 @external
 def getApproved(_tokenId: uint256) -> address:
-    return empty(address)
+    assert self.owner_of_nft[_tokenId] != empty(address)
+
+    return self.approvals[_tokenId]
 
 @view
 @external
@@ -96,7 +101,14 @@ def safeTransferFrom(_from: address, _to: address, _tokenId: uint256, _data: Byt
 @external
 @payable
 def approve(_approved: address, _tokenId: uint256):
-    pass
+    owner: address = self.owner_of_nft[_tokenId]
+    
+    assert owner != empty(address), "Invalid token"
+    assert _approved != owner, "Owner can't be approved"
+    assert msg.sender == owner
+    
+    self.approvals[_tokenId] = _approved
+    log Approval(owner, _approved, _tokenId)
 
 @external
 def setApprovalForAll(_operator: address, _approved: bool):

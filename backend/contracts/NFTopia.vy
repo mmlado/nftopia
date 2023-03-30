@@ -61,21 +61,21 @@ def balanceOf(_owner: address) -> uint256:
 def ownerOf(_tokenId: uint256) -> address:
     owner: address = self.owner_of_nft[_tokenId]
     
-    assert owner != empty(address), "No owner"
+    assert owner != empty(address), "Invalid token"
     
     return owner
 
 @view
 @external
 def tokenURI(_tokenId: uint256) -> String[50]:
-    assert self.owner_of_nft[_tokenId] != empty(address), "No owner"
+    assert self.owner_of_nft[_tokenId] != empty(address), "Invalid token"
 
     return self.id_to_url[_tokenId]
 
 @view
 @external
 def getApproved(_tokenId: uint256) -> address:
-    assert self.owner_of_nft[_tokenId] != empty(address)
+    assert self.owner_of_nft[_tokenId] != empty(address), "Invalid token"
 
     return self.approvals[_tokenId]
 
@@ -104,10 +104,11 @@ def approve(_approved: address, _tokenId: uint256):
     owner: address = self.owner_of_nft[_tokenId]
     
     assert owner != empty(address), "Invalid token"
+    assert msg.sender == owner, "Forbidden"
     assert _approved != owner, "Owner can't be approved"
-    assert msg.sender == owner
     
     self.approvals[_tokenId] = _approved
+
     log Approval(owner, _approved, _tokenId)
 
 @external
@@ -128,21 +129,30 @@ def mint(_url: String[50]):
 
 @external
 def burn(_token_id: uint256):
+    owner: address = self.owner_of_nft[_token_id]
+    assert owner != empty(address)
+
     sender: address = msg.sender
-    assert self.owner_of_nft[_token_id] == sender, "Not owner"
+    assert self.owner_of_nft[_token_id] == sender or self.approvals[_token_id] == sender, "Forbidden" 
 
     self.owner_of_nft[_token_id] = empty(address)
-    self.token_count[sender] = unsafe_sub(self.token_count[sender], 1)
+    self.token_count[owner] = unsafe_sub(self.token_count[sender], 1)
 
-    log Transfer(sender, empty(address), _token_id)
+    self.approvals[_token_id] = empty(address)
+
+    log Transfer(owner, empty(address), _token_id)
 
 @internal
 def _transfer(_from: address, _to: address, _token_id: uint256, _sender: address):
-    assert _from == _sender, "From address not the sender"
-    assert self.owner_of_nft[_token_id] == _sender, "Not owner" 
+    owner: address = self.owner_of_nft[_token_id]
+    assert owner != empty(address)
+
+    assert self.owner_of_nft[_token_id] == _sender or self.approvals[_token_id] == _sender, "Forbidden" 
 
     self.owner_of_nft[_token_id] = _to
     self.token_count[_from] = unsafe_sub(self.token_count[_from], 1)
     self.token_count[_to] = unsafe_add(self.token_count[_to], 1)
 
-    log Transfer(_from, _to, _token_id)
+    self.approvals[_token_id] = empty(address)
+
+    log Transfer(owner, _to, _token_id)

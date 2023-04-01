@@ -145,7 +145,8 @@ def burn(_token_id: uint256):
 @internal
 def _transfer(_from: address, _to: address, _token_id: uint256, _sender: address):
     owner: address = self.owner_of_nft[_token_id]
-    assert owner != empty(address)
+    assert owner != empty(address), "Invalid token"
+    assert owner == _from, "Forbidden"
 
     assert self.owner_of_nft[_token_id] == _sender or self.approvals[_token_id] == _sender, "Forbidden" 
 

@@ -3,7 +3,8 @@ import pytest
 
 from helper import (
     log_test,
-    URI
+    URI,
+    ZERO_ADDRESS
 )
 
 
@@ -69,6 +70,8 @@ def test_transfer_from_approved(nftopia_contract, accounts):
     nftopia_contract.approve(charlie, 0, {'from': alice})
 
     _test_transfer_from(nftopia_contract.transferFrom, nftopia_contract, charlie, alice, bob)
+
+    assert nftopia_contract.getApproved(0) == ZERO_ADDRESS
 
 
 def test_transfer_from_approved_forbidden(nftopia_contract, accounts):

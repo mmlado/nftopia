@@ -39,6 +39,21 @@ def test_approve_invalid_token(nftopia_contract, accounts):
         nftopia_contract.approve(bob, 0, {'from': alice})
 
 
+def test_approve_approve_for_all(nftopia_contract, accounts):
+    alice = accounts[0]
+    bob = accounts[1]
+    charlie = accounts[2]
+
+    nftopia_contract.setApprovalForAll(charlie, True, {'from': alice})
+
+    nftopia_contract.mint(URI, {'from': alice})
+
+    transaction = nftopia_contract.approve(bob, 0, {'from': charlie})
+
+    log_test(transaction, 'Approval', _owner=alice, _approved=bob, _tokenId=0)
+    assert nftopia_contract.getApproved(0) == bob
+
+
 def test_approve_not_owner(nftopia_contract, accounts):
     alice = accounts[0]
     bob = accounts[1]

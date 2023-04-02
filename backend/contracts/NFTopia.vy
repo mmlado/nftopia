@@ -2,7 +2,9 @@
 
 from vyper.interfaces import ERC721
 
+
 implements: ERC721
+
 
 # Interface for the contract called by safeTransferFrom()
 interface ERC721Receiver:
@@ -13,33 +15,41 @@ interface ERC721Receiver:
         _data: Bytes[1024]
     ) -> bytes4: view
 
+
 event Transfer:
     _from: address
     _to: address
     _tokenId: uint256
+
 
 event Approval:
     _owner: address
     _approved: address
     _tokenId: uint256
 
+
 event ApprovalForAll:
     _owner: address
     _operator: address
     _approved: bool
 
+
 ERC165_INTERFACE_ID: constant(bytes4) = 0x01ffc9a7
 ERC721_INTERFACE_ID: constant(bytes4) = 0x80ac58cd
+
 
 owner_of_nft: HashMap[uint256, address]
 id_to_url: HashMap[uint256, String[50]]
 token_count: HashMap[address, uint256]
 number_of_tokens: uint256
 approvals: HashMap[uint256, address]
+operator: HashMap[address, HashMap[address, bool]]
+
 
 @external
 def __init__():
     pass
+
 
 @view
 @external
@@ -49,12 +59,14 @@ def supportsInterface(interface_id: bytes4) -> bool:
         ERC721_INTERFACE_ID
     ]
 
+
 @view
 @external
 def balanceOf(_owner: address) -> uint256:
     assert _owner != empty(address), "Zero address"
     
     return self.token_count[_owner]
+
 
 @view
 @external
@@ -65,12 +77,14 @@ def ownerOf(_tokenId: uint256) -> address:
     
     return owner
 
+
 @view
 @external
 def tokenURI(_tokenId: uint256) -> String[50]:
     assert self.owner_of_nft[_tokenId] != empty(address), "Invalid token"
 
     return self.id_to_url[_tokenId]
+
 
 @view
 @external
@@ -79,15 +93,18 @@ def getApproved(_tokenId: uint256) -> address:
 
     return self.approvals[_tokenId]
 
+
 @view
 @external
 def isApprovedForAll(_owner: address, _operator: address) -> bool:
-    return True
+    return self.operator[_owner][_operator]
+
 
 @external
 @payable
 def transferFrom(_from: address, _to: address, _tokenId: uint256):
     self._transfer(_from, _to, _tokenId, msg.sender)
+
 
 @external
 @payable
@@ -98,22 +115,31 @@ def safeTransferFrom(_from: address, _to: address, _tokenId: uint256, _data: Byt
         return_value: bytes4 = ERC721Receiver(_to).onERC721Received(msg.sender, _from, _tokenId, _data)
         assert return_value == method_id("onERC721Received(address,address,uint256,bytes)", output_type=bytes4)
 
+
 @external
 @payable
 def approve(_approved: address, _tokenId: uint256):
+    sender: address = msg.sender
     owner: address = self.owner_of_nft[_tokenId]
     
     assert owner != empty(address), "Invalid token"
-    assert msg.sender == owner, "Forbidden"
+    assert sender == owner or self.operator[owner][sender], "Forbidden"
     assert _approved != owner, "Owner can't be approved"
     
     self.approvals[_tokenId] = _approved
 
     log Approval(owner, _approved, _tokenId)
 
+
 @external
 def setApprovalForAll(_operator: address, _approved: bool):
-    pass
+    sender: address = msg.sender
+    assert _operator != sender, "Owner"
+
+    self.operator[sender][_operator] = _approved
+
+    log ApprovalForAll(sender, _operator, _approved)
+
 
 @external
 def mint(_url: String[50]):
@@ -127,20 +153,22 @@ def mint(_url: String[50]):
     
     log Transfer(empty(address), to, token_id)
 
+
 @external
 def burn(_token_id: uint256):
     owner: address = self.owner_of_nft[_token_id]
     assert owner != empty(address)
 
     sender: address = msg.sender
-    assert self.owner_of_nft[_token_id] == sender or self.approvals[_token_id] == sender, "Forbidden" 
+    assert sender in [self.owner_of_nft[_token_id], self.approvals[_token_id]] or self.operator[owner][sender], "Forbidden" 
 
     self.owner_of_nft[_token_id] = empty(address)
-    self.token_count[owner] = unsafe_sub(self.token_count[sender], 1)
+    self.token_count[owner] = unsafe_sub(self.token_count[owner], 1)
 
     self.approvals[_token_id] = empty(address)
 
     log Transfer(owner, empty(address), _token_id)
+
 
 @internal
 def _transfer(_from: address, _to: address, _token_id: uint256, _sender: address):
@@ -148,7 +176,7 @@ def _transfer(_from: address, _to: address, _token_id: uint256, _sender: address
     assert owner != empty(address), "Invalid token"
     assert owner == _from, "Forbidden"
 
-    assert self.owner_of_nft[_token_id] == _sender or self.approvals[_token_id] == _sender, "Forbidden" 
+    assert _sender in [self.owner_of_nft[_token_id], self.approvals[_token_id]] or self.operator[owner][_sender], "Forbidden" 
 
     self.owner_of_nft[_token_id] = _to
     self.token_count[_from] = unsafe_sub(self.token_count[_from], 1)

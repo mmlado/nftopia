@@ -82,6 +82,28 @@ def test_transfer_from_approved_forbidden(nftopia_contract, accounts):
     nftopia_contract.approve(charlie, 0, {'from': alice})
 
     _test_transfer_from_forbidden(nftopia_contract.transferFrom, nftopia_contract, charlie, bob, alice)
+    
+
+def test_transfer_from_approval_for_all(nftopia_contract, accounts):
+    alice = accounts[0]
+    bob = accounts[1]
+    charlie = accounts[2]
+
+    nftopia_contract.setApprovalForAll(charlie, True, {'from': alice})
+
+    _test_transfer_from(nftopia_contract.transferFrom, nftopia_contract, charlie, alice, bob)
+
+
+def test_transfer_from_approval_for_all_forbidden(nftopia_contract, accounts):
+    alice = accounts[0]
+    bob = accounts[1]
+    charlie = accounts[2]
+
+    nftopia_contract.setApprovalForAll(charlie, False, {'from': alice})
+
+    _test_transfer_from_forbidden(nftopia_contract.transferFrom, nftopia_contract, charlie, bob, alice)
+
+    assert nftopia_contract.ownerOf(0) == alice
 
 
 def _test_transfer_from(function, nftopia_contract, sender, from_address, to_address, *args):

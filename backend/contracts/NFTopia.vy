@@ -16,6 +16,16 @@ interface ERC721Receiver:
     ) -> bytes4: view
 
 
+interface ERC721Metadata:
+    def name() -> String[64]: view
+
+    def symbol() -> String[32]: view
+
+    def tokenURI(
+        _tokenId: uint256
+    ) -> String[128]: view
+
+
 event Transfer:
     _from: address
     _to: address
@@ -36,6 +46,7 @@ event ApprovalForAll:
 
 ERC165_INTERFACE_ID: constant(bytes4) = 0x01ffc9a7
 ERC721_INTERFACE_ID: constant(bytes4) = 0x80ac58cd
+ERC721_METADATA_INTERFACE_ID: constant(bytes4) =0x5b5e139f
 
 
 owner_of_nft: HashMap[uint256, address]
@@ -47,8 +58,13 @@ operator: HashMap[address, HashMap[address, bool]]
 price: public(uint256)
 owner: address
 
+token_name: String[64]
+token_symbol: String[32]
+
 @external
-def __init__(_price: uint256):
+def __init__(_name: String[64], _symbol: String[32], _price: uint256):
+    self.token_name = _name
+    self.token_symbol = _symbol
     self.price = as_wei_value(_price, "wei")
     self.owner = msg.sender
 
@@ -58,7 +74,8 @@ def __init__(_price: uint256):
 def supportsInterface(interface_id: bytes4) -> bool:
     return interface_id in [
         ERC165_INTERFACE_ID,
-        ERC721_INTERFACE_ID
+        ERC721_INTERFACE_ID,
+        ERC721_METADATA_INTERFACE_ID
     ]
 
 
@@ -78,6 +95,18 @@ def ownerOf(_tokenId: uint256) -> address:
     assert owner != empty(address), "Invalid token"
     
     return owner
+
+
+@view
+@external
+def name() -> String[64]:
+    return self.token_name
+
+
+@view
+@external
+def symbol() -> String[32]:
+    return self.token_symbol
 
 
 @view

@@ -11,7 +11,7 @@ ERC721_INTERFACE = 0x80ac58cd
 @pytest.fixture
 def nftopia_contract(NFTopia, accounts):
     # deploy the contract with the initial value as a constructor argument
-    yield NFTopia.deploy(0, {'from': accounts[0]})
+    yield NFTopia.deploy('Test', 'TEST', 0, {'from': accounts[0]})
 
 
 def test_erc721_interface(nftopia_contract, accounts):

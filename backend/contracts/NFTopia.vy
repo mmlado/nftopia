@@ -44,11 +44,13 @@ token_count: HashMap[address, uint256]
 number_of_tokens: uint256
 approvals: HashMap[uint256, address]
 operator: HashMap[address, HashMap[address, bool]]
-
+price: public(uint256)
+owner: address
 
 @external
-def __init__():
-    pass
+def __init__(_price: uint256):
+    self.price = as_wei_value(_price, "wei")
+    self.owner = msg.sender
 
 
 @view
@@ -142,7 +144,9 @@ def setApprovalForAll(_operator: address, _approved: bool):
 
 
 @external
+@payable
 def mint(_url: String[50]):
+    assert msg.value == self.price
     to: address = msg.sender
     token_id: uint256 = self.number_of_tokens
     
@@ -153,6 +157,19 @@ def mint(_url: String[50]):
     
     log Transfer(empty(address), to, token_id)
 
+
+@external
+def withdraw():
+    current_balance: uint256 = self.balance
+    assert current_balance > 0, "No balance"
+    
+    send(self.owner, current_balance)
+
+@external
+def setPrice(_price: uint256):
+    assert msg.sender == self.owner, "Forbidden"
+    
+    self.price = as_wei_value(_price, "wei")
 
 @external
 def burn(_token_id: uint256):

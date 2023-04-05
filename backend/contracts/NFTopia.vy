@@ -65,7 +65,7 @@ token_symbol: String[32]
 def __init__(_name: String[64], _symbol: String[32], _price: uint256):
     self.token_name = _name
     self.token_symbol = _symbol
-    self.price = as_wei_value(_price, "wei")
+    self.price = _price
     self.owner = msg.sender
 
 
@@ -175,7 +175,7 @@ def setApprovalForAll(_operator: address, _approved: bool):
 @external
 @payable
 def mint(_url: String[50]):
-    assert msg.value == self.price
+    assert msg.value == self.price, "Not enough payment"
     to: address = msg.sender
     token_id: uint256 = self.number_of_tokens
     
@@ -198,7 +198,7 @@ def withdraw():
 def setPrice(_price: uint256):
     assert msg.sender == self.owner, "Forbidden"
     
-    self.price = as_wei_value(_price, "wei")
+    self.price = _price
 
 @external
 def burn(_token_id: uint256):

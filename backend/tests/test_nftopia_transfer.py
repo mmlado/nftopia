@@ -11,7 +11,7 @@ from helper import (
 @pytest.fixture
 def nftopia_contract(NFTopia, accounts):
     # deploy the contract with the initial value as a constructor argument
-    contract = NFTopia.deploy('Test', 'TEST', 0, {'from': accounts[0]})
+    contract = NFTopia.deploy('', '', 0, {'from': accounts[0]})
 
     contract.mint(URI, {'from': accounts[0]})
     

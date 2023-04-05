@@ -10,7 +10,7 @@ from helper import (
 @pytest.fixture
 def nftopia_contract(NFTopia, accounts):
     # deploy the contract with the initial value as a constructor argument
-    yield NFTopia.deploy('Test', 'TEST', 0, {'from': accounts[0]})
+    yield NFTopia.deploy('', '', 0, {'from': accounts[0]})
 
 
 def test_get_approved_invalid_token(nftopia_contract, accounts):

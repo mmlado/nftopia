@@ -6,12 +6,14 @@ from helper import (
 )
 
 ERC721_INTERFACE = 0x80ac58cd
+NAME = 'Test'
+SYMBOL = 'TEST'
 
 
 @pytest.fixture
 def nftopia_contract(NFTopia, accounts):
     # deploy the contract with the initial value as a constructor argument
-    yield NFTopia.deploy('Test', 'TEST', 0, {'from': accounts[0]})
+    yield NFTopia.deploy(NAME, SYMBOL, 0, {'from': accounts[0]})
 
 
 def test_erc721_interface(nftopia_contract, accounts):
@@ -22,7 +24,15 @@ def test_balance_of(nftopia_contract, accounts):
     with brownie.reverts('Zero address'):
         nftopia_contract.balanceOf(ZERO_ADDRESS)
 
-    assert (nftopia_contract.balanceOf(accounts[0]) == 0)
+    assert nftopia_contract.balanceOf(accounts[0]) == 0
+
+
+def test_name(nftopia_contract, accounts):
+    assert nftopia_contract.name() == NAME
+
+
+def test_symbol(nftopia_contract, accounts):
+    assert nftopia_contract.symbol() == SYMBOL
 
 
 def test_token_uri_invalid_token(nftopia_contract, accounts):

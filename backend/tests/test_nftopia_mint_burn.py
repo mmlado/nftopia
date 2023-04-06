@@ -13,12 +13,34 @@ PRICE = 10 ** 18
 
 @pytest.fixture
 def nftopia_contract(NFTopia, accounts):
-    # deploy the contract with the initial value as a constructor argument
     yield NFTopia.deploy('', '', PRICE, {'from': accounts[0]})
 
 
 def test_price(nftopia_contract, accounts):
     assert nftopia_contract.price() == PRICE
+
+
+def test_set_price(nftopia_contract, accounts):
+    nftopia_contract.setPrice(PRICE - 1)
+    assert nftopia_contract.price() == PRICE - 1
+
+
+def test_withdraw(nftopia_contract, accounts):
+    alice = accounts[0]
+
+    balance = alice.balance()
+    nftopia_contract.mint(URI, {'from': alice, 'value': PRICE})
+    assert alice.balance() == balance - PRICE
+
+    nftopia_contract.withdraw()
+    assert alice.balance() == balance
+
+
+def test_withdraw_no_fuds(nftopia_contract, accounts):
+    alice = accounts[0]
+
+    with brownie.reverts('No balance'):
+        nftopia_contract.withdraw()
 
 
 def test_mint(nftopia_contract, accounts):
@@ -32,6 +54,20 @@ def test_mint(nftopia_contract, accounts):
     assert (nftopia_contract.tokenURI(0) == URI)
     assert (nftopia_contract.balanceOf(alice) == 1)
     assert (nftopia_contract.ownerOf(0) == alice)
+
+
+def test_no_value(nftopia_contract, accounts):
+    alice = accounts[0]
+
+    with brownie.reverts('Not enough value'):
+        nftopia_contract.mint(URI, {'from': alice})
+
+
+def test_insuficient_value(nftopia_contract, accounts):
+    alice = accounts[0]
+
+    with brownie.reverts('Not enough value'):
+        nftopia_contract.mint(URI, {'from': alice, 'value': PRICE - 1})
 
 
 def test_burn(nftopia_contract, accounts):

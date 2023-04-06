@@ -175,7 +175,7 @@ def setApprovalForAll(_operator: address, _approved: bool):
 @external
 @payable
 def mint(_url: String[50]):
-    assert msg.value == self.price, "Not enough payment"
+    assert msg.value == self.price, "Not enough value"
     to: address = msg.sender
     token_id: uint256 = self.number_of_tokens
     

@@ -12,7 +12,6 @@ SYMBOL = 'TEST'
 
 @pytest.fixture
 def nftopia_contract(NFTopia, accounts):
-    # deploy the contract with the initial value as a constructor argument
     yield NFTopia.deploy(NAME, SYMBOL, 0, {'from': accounts[0]})
 
 

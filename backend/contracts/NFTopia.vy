@@ -1,9 +1,20 @@
 # @version ^0.3.0
 
+
+from vyper.interfaces import ERC165
 from vyper.interfaces import ERC721
 
 
+interface ERC721Metadata:
+    def name() -> String[64]: view
+
+    def symbol() -> String[32]: view
+
+    def tokenURI(_tokenId: uint256) -> String[128]: view
+
+implements: ERC165
 implements: ERC721
+implements: ERC721Metadata
 
 
 # Interface for the contract called by safeTransferFrom()
@@ -16,14 +27,12 @@ interface ERC721Receiver:
     ) -> bytes4: view
 
 
-interface ERC721Metadata:
-    def name() -> String[64]: view
-
-    def symbol() -> String[32]: view
-
-    def tokenURI(
-        _tokenId: uint256
-    ) -> String[128]: view
+interface Ownable:
+    def owner() -> address: view
+    
+    def renounceOwnership(): nonpayable
+    
+    def transferOwnership(_newOwner: address): nonpayable
 
 
 event Transfer:
@@ -44,13 +53,18 @@ event ApprovalForAll:
     _approved: bool
 
 
+event OwnershipTransferred:
+    _previousOwner: address
+    _newOwner: address
+
+
 ERC165_INTERFACE_ID: constant(bytes4) = 0x01ffc9a7
 ERC721_INTERFACE_ID: constant(bytes4) = 0x80ac58cd
 ERC721_METADATA_INTERFACE_ID: constant(bytes4) =0x5b5e139f
 
 
 owner_of_nft: HashMap[uint256, address]
-id_to_url: HashMap[uint256, String[50]]
+id_to_url: HashMap[uint256, String[64]]
 token_count: HashMap[address, uint256]
 number_of_tokens: uint256
 approvals: HashMap[uint256, address]
@@ -111,7 +125,7 @@ def symbol() -> String[32]:
 
 @view
 @external
-def tokenURI(_tokenId: uint256) -> String[50]:
+def tokenURI(_tokenId: uint256) -> String[128]:
     assert self.owner_of_nft[_tokenId] != empty(address), "Invalid token"
 
     return self.id_to_url[_tokenId]
@@ -174,7 +188,7 @@ def setApprovalForAll(_operator: address, _approved: bool):
 
 @external
 @payable
-def mint(_url: String[50]):
+def mint(_url: String[64]):
     assert msg.value == self.price, "Not enough value"
     to: address = msg.sender
     token_id: uint256 = self.number_of_tokens

@@ -12,9 +12,19 @@ interface ERC721Metadata:
 
     def tokenURI(_tokenId: uint256) -> String[128]: view
 
+
+interface Ownable:
+    def owner() -> address: view
+    
+    def renounceOwnership(): nonpayable
+    
+    def transferOwnership(_newOwner: address): nonpayable
+
+
 implements: ERC165
 implements: ERC721
 implements: ERC721Metadata
+implements: Ownable
 
 
 # Interface for the contract called by safeTransferFrom()
@@ -25,14 +35,6 @@ interface ERC721Receiver:
         _tokenId: uint256,
         _data: Bytes[1024]
     ) -> bytes4: view
-
-
-interface Ownable:
-    def owner() -> address: view
-    
-    def renounceOwnership(): nonpayable
-    
-    def transferOwnership(_newOwner: address): nonpayable
 
 
 event Transfer:
@@ -70,17 +72,18 @@ number_of_tokens: uint256
 approvals: HashMap[uint256, address]
 operator: HashMap[address, HashMap[address, bool]]
 price: public(uint256)
-owner: address
+owner: public(address)
 
-token_name: String[64]
-token_symbol: String[32]
+name: public(String[64])
+symbol: public(String[32])
+
 
 @external
 def __init__(_name: String[64], _symbol: String[32], _price: uint256):
-    self.token_name = _name
-    self.token_symbol = _symbol
+    self.name = _name
+    self.symbol = _symbol
     self.price = _price
-    self.owner = msg.sender
+    self._transfer_ownership(msg.sender)
 
 
 @view
@@ -109,18 +112,6 @@ def ownerOf(_tokenId: uint256) -> address:
     assert owner != empty(address), "Invalid token"
     
     return owner
-
-
-@view
-@external
-def name() -> String[64]:
-    return self.token_name
-
-
-@view
-@external
-def symbol() -> String[32]:
-    return self.token_symbol
 
 
 @view
@@ -187,6 +178,21 @@ def setApprovalForAll(_operator: address, _approved: bool):
 
 
 @external
+def renounceOwnership():
+    assert msg.sender == self.owner, "Forbidden"
+
+    self._transfer_ownership(empty(address))
+    
+
+@external
+def transferOwnership(_newOwner: address):
+    assert _newOwner != empty(address), "Zero address" 
+    assert msg.sender == self.owner, "Forbidden"
+    
+    self._transfer_ownership(_newOwner)
+
+
+@external
 @payable
 def mint(_url: String[64]):
     assert msg.value == self.price, "Not enough value"
@@ -245,3 +251,12 @@ def _transfer(_from: address, _to: address, _token_id: uint256, _sender: address
     self.approvals[_token_id] = empty(address)
 
     log Transfer(owner, _to, _token_id)
+
+
+@internal
+def _transfer_ownership(_new_owner: address):
+    old_owner: address = self.owner
+
+    self.owner = _new_owner   
+    
+    log OwnershipTransferred(old_owner, _new_owner)

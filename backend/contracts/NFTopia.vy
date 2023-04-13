@@ -188,6 +188,7 @@ def renounceOwnership():
 def transferOwnership(_newOwner: address):
     assert _newOwner != empty(address), "Zero address" 
     assert msg.sender == self.owner, "Forbidden"
+    assert _newOwner != self.owner, "Already Owner"
     
     self._transfer_ownership(_newOwner)
 

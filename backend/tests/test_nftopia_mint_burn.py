@@ -21,8 +21,10 @@ def test_price(nftopia_contract, accounts):
 
 
 def test_set_price(nftopia_contract, accounts):
-    nftopia_contract.setPrice(PRICE - 1)
+    transaction = nftopia_contract.setPrice(PRICE - 1)
     assert nftopia_contract.price() == PRICE - 1
+
+    log_test(transaction, 'PriceChanged', _previousPrice=PRICE, _newPrice=PRICE - 1)
 
 
 def test_withdraw(nftopia_contract, accounts):
@@ -37,8 +39,6 @@ def test_withdraw(nftopia_contract, accounts):
 
 
 def test_withdraw_no_fuds(nftopia_contract, accounts):
-    alice = accounts[0]
-
     with brownie.reverts('No balance'):
         nftopia_contract.withdraw()
 

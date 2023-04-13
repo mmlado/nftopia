@@ -60,6 +60,10 @@ event OwnershipTransferred:
     _newOwner: address
 
 
+event PriceChanged:
+    _previousPrice: uint256
+    _newPrice: uint256
+
 ERC165_INTERFACE_ID: constant(bytes4) = 0x01ffc9a7
 ERC721_INTERFACE_ID: constant(bytes4) = 0x80ac58cd
 ERC721_METADATA_INTERFACE_ID: constant(bytes4) =0x5b5e139f
@@ -219,7 +223,11 @@ def withdraw():
 def setPrice(_price: uint256):
     assert msg.sender == self.owner, "Forbidden"
     
+    old_price: uint256 = self.price
+
     self.price = _price
+
+    log PriceChanged(old_price, _price)
 
 @external
 def burn(_token_id: uint256):
